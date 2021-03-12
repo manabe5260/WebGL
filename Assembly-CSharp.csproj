@@ -76,6 +76,7 @@
     <Compile Include="Assets\Photon\PhotonLibs\WebSocket\SocketWebTcp.cs" />
     <Compile Include="Assets\Photon\PhotonLibs\WebSocket\WebSocket.cs" />
     <Compile Include="Assets\Photon\PhotonRealtime\Demos\DemoLoadBalancing\ConnectAndJoinRandomLb.cs" />
+    <Compile Include="Assets\Photon\Tutorial\GameManager.cs" />
     <Compile Include="Assets\Photon\Tutorial\Launchermanabe.cs" />
     <Compile Include="Assets\Photon\Tutorial\PlayerNameInputField.cs" />
     <None Include="Assets\Photon\PhotonLibs\netstandard2.0\Photon3Unity3D.xml" />
