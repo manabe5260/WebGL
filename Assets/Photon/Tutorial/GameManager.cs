@@ -14,10 +14,13 @@ namespace Com.MyCompany.MyGame
 {
     public class GameManager : MonoBehaviourPunCallbacks
     {
-
+        public static GameManager Instance;
 
         #region Photon Callbacks
-
+        void Start()
+        {
+            Instance = this;
+        }
 
         /// <summary>
         /// Called when the local player left the room. We need to load the launcher scene.
