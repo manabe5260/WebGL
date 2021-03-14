@@ -5,6 +5,7 @@ using System.Collections;
 
 using Photon.Pun;
 using Photon.Realtime;
+using Photon.Pun.Demo.PunBasics;
 
 namespace Com.MyCompany.MyGame
 {
@@ -44,12 +45,31 @@ namespace Com.MyCompany.MyGame
         }
 
         /// <summary>
+        /// 初期化の際にUnityによりGameObjectに呼び出されるMonoBehaviourメソッド
+        /// </summary>
+        void Start()
+        {
+            CameraWork _cameraWork = this.gameObject.GetComponent<CameraWork>();
+
+
+            if (_cameraWork != null)
+            {
+                if (photonView.IsMine)
+                {
+                    _cameraWork.OnStartFollowing();
+                }
+            }
+            else
+            {
+                Debug.LogError("<Color=Red><a>Missing</a></Color> CameraWork Component on playerPrefab.", this);
+            }
+        }
+
+        /// <summary>
         /// MonoBehaviour method called on GameObject by Unity on every frame.
         /// </summary>
         void Update()
         {
-
-            ProcessInputs();
 
             if (photonView.IsMine)
             {
@@ -125,6 +145,27 @@ namespace Com.MyCompany.MyGame
                 {
                     IsFiring = false;
                 }
+            }
+        }
+
+        #endregion
+
+        #region IPunObservable implementation
+
+        public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+        {
+
+            if (stream.IsWriting)
+            {
+                //このプレイヤーを所有しています。データをほかのものに送ります。
+                stream.SendNext(IsFiring);
+                stream.SendNext(Health);
+            }
+            else
+            {
+                // ネットワークプレイヤー。データ受信
+                this.IsFiring = (bool)stream.ReceiveNext();
+                this.Health = (float)stream.ReceiveNext();
             }
         }
 
