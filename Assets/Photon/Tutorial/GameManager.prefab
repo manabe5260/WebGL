@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 2506734124836533815}
   - component: {fileID: 1517676370284850856}
   m_Layer: 0
-  m_Name: GameManager0
+  m_Name: GameManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -43,3 +43,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 40c12a562a156da409e47062ae13c1b6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playerPrefab: {fileID: 3077049273457464452, guid: 74f72400e40248b4f835f44533ad9662,
+    type: 3}

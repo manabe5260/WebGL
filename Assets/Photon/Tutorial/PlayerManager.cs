@@ -13,10 +13,41 @@ namespace Com.MyCompany.MyGame
     /// Player manager.
     /// Handles fire Input and Beams.
     /// </summary>
-    public class PlayerManager : MonoBehaviourPunCallbacks
+    public class PlayerManager : MonoBehaviourPunCallbacks, IPunObservable
     {
+        #region IPunObservable implementation
+
+        public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+        {
+
+            if (stream.IsWriting)
+            {
+                //このプレイヤーを所有しています。データをほかのものに送ります。
+                stream.SendNext(IsFiring);
+                stream.SendNext(Health);
+            }
+            else
+            {
+                // ネットワークプレイヤー。データ受信
+                this.IsFiring = (bool)stream.ReceiveNext();
+                this.Health = (float)stream.ReceiveNext();
+            }
+        }
+
+        #endregion
+
+        #region Public Fields
+
         [Tooltip("The current Health of our player")]
         public float Health = 1f;
+        [Tooltip("The local player instance. Use this to know if the local player is represented in the Scene")]
+        public static GameObject LocalPlayerInstance;
+
+        [Tooltip("The Player's UI GameObject Prefab")]
+        [SerializeField]
+        private GameObject playerUiPrefab;
+
+        #endregion
 
         #region Private Fields
 
@@ -42,6 +73,16 @@ namespace Com.MyCompany.MyGame
             {
                 beams.SetActive(false);
             }
+
+            // #Important
+            // used in GameManager.cs: we keep track of the localPlayer instance to prevent instantiation when levels are synchronized
+            if (photonView.IsMine)
+            {
+                PlayerManager.LocalPlayerInstance = this.gameObject;
+            }
+            // #Critical
+            // we flag as don't destroy on load so that instance survives level synchronization, thus giving a seamless experience when levels load.
+            DontDestroyOnLoad(this.gameObject);
         }
 
         /// <summary>
@@ -50,7 +91,6 @@ namespace Com.MyCompany.MyGame
         void Start()
         {
             CameraWork _cameraWork = this.gameObject.GetComponent<CameraWork>();
-
 
             if (_cameraWork != null)
             {
@@ -63,6 +103,24 @@ namespace Com.MyCompany.MyGame
             {
                 Debug.LogError("<Color=Red><a>Missing</a></Color> CameraWork Component on playerPrefab.", this);
             }
+
+            if (playerUiPrefab != null)
+            {
+                GameObject _uiGo = Instantiate(playerUiPrefab);
+                _uiGo.SendMessage("SetTarget", this, SendMessageOptions.RequireReceiver);
+            }
+            else
+            {
+                Debug.LogWarning("<Color=Red><a>Missing</a></Color> PlayerUiPrefab reference on player Prefab.", this);
+            }
+
+#if UNITY_5_4_OR_NEWER
+            // Unity 5.4 has a new scene management. register a method to call CalledOnLevelWasLoaded.
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += (scene, loadingMode) =>
+            {
+                //this.CalledOnLevelWasLoaded(scene.buildIndex);
+            };
+#endif
         }
 
         /// <summary>
@@ -123,6 +181,26 @@ namespace Com.MyCompany.MyGame
             Health -= 0.1f * Time.deltaTime;
         }
 
+#if !UNITY_5_4_OR_NEWER
+        /// <summary>See CalledOnLevelWasLoaded. Outdated in Unity 5.4.</summary>
+        void OnLevelWasLoaded(int level)
+        {
+            this.CalledOnLevelWasLoaded(level);
+        }
+#endif
+
+
+        void CalledOnLevelWasLoaded(int level)
+        {
+            // check if we are outside the Arena and if it's the case, spawn around the center of the arena in a safe zone
+            if (!Physics.Raycast(transform.position, -Vector3.up, 5f))
+            {
+                transform.position = new Vector3(0f, 5f, 0f);
+            }
+            GameObject _uiGo = Instantiate(this.playerUiPrefab);
+            _uiGo.SendMessage("SetTarget", this, SendMessageOptions.RequireReceiver);
+        }
+
         #endregion
 
         #region Custom
@@ -150,25 +228,5 @@ namespace Com.MyCompany.MyGame
 
         #endregion
 
-        #region IPunObservable implementation
-
-        public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
-        {
-
-            if (stream.IsWriting)
-            {
-                //このプレイヤーを所有しています。データをほかのものに送ります。
-                stream.SendNext(IsFiring);
-                stream.SendNext(Health);
-            }
-            else
-            {
-                // ネットワークプレイヤー。データ受信
-                this.IsFiring = (bool)stream.ReceiveNext();
-                this.Health = (float)stream.ReceiveNext();
-            }
-        }
-
-        #endregion
     }
 }
